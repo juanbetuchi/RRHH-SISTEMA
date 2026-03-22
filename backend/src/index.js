@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
+const cloudinary = require('cloudinary').v2;
 
 const vacantesRouter = require('./routes/vacantes');
 const postulantesRouter = require('./routes/postulantes');
@@ -10,20 +11,27 @@ const rankingRouter = require('./routes/ranking');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// ── Cloudinary config ───────────────────────────────────────────────────────
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+});
+
 // ── Middleware ──────────────────────────────────────────────────────────────
 app.use(cors({
   origin: process.env.FRONTEND_URL || '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type']
 }));
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // ── Rutas ───────────────────────────────────────────────────────────────────
 app.use('/api/vacantes', vacantesRouter);
 app.use('/api/postulantes', postulantesRouter);
 app.use('/api/ranking', rankingRouter);
 
-// Health check
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',

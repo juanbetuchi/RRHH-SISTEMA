@@ -7,15 +7,12 @@ const PostulanteSchema = new mongoose.Schema({
     required: true
   },
   nombre: { type: String, required: true, trim: true },
-  respuestas: {
-    type: Map,
-    of: String,
-    default: {}
-  },
+  respuestas: { type: Map, of: String, default: {} },
+  cvUrl: { type: String, default: null },
+  cvPublicId: { type: String, default: null },
+  cvNombre: { type: String, default: null },
   puntajeIA: { type: Number, default: null },
   evaluacionIA: { type: String, default: null }
-}, {
-  timestamps: true
-});
+}, { timestamps: true });
 
 module.exports = mongoose.model('Postulante', PostulanteSchema);

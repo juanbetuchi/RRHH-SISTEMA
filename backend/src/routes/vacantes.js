@@ -1,8 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const Vacante = require('../models/Vacante');
+const Postulante = require('../models/Postulante');
+const cloudinary = require('cloudinary').v2;
 
-// GET /api/vacantes — listar todas
+// GET /api/vacantes
 router.get('/', async (req, res) => {
   try {
     const vacantes = await Vacante.find({ activa: true }).sort({ createdAt: -1 });
@@ -12,7 +14,7 @@ router.get('/', async (req, res) => {
   }
 });
 
-// GET /api/vacantes/:id — obtener una con su cuestionario
+// GET /api/vacantes/:id
 router.get('/:id', async (req, res) => {
   try {
     const vacante = await Vacante.findById(req.params.id);
@@ -23,7 +25,7 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// POST /api/vacantes — crear vacante
+// POST /api/vacantes
 router.post('/', async (req, res) => {
   try {
     const { nombre, area, descripcion, requisitos } = req.body;
@@ -36,7 +38,7 @@ router.post('/', async (req, res) => {
   }
 });
 
-// PUT /api/vacantes/:id/cuestionario — guardar cuestionario
+// PUT /api/vacantes/:id/cuestionario
 router.put('/:id/cuestionario', async (req, res) => {
   try {
     const { preguntas } = req.body;
@@ -53,11 +55,23 @@ router.put('/:id/cuestionario', async (req, res) => {
   }
 });
 
-// DELETE /api/vacantes/:id — desactivar vacante
+// DELETE /api/vacantes/:id — elimina vacante + postulantes + CVs de Cloudinary
 router.delete('/:id', async (req, res) => {
   try {
-    await Vacante.findByIdAndUpdate(req.params.id, { activa: false });
-    res.json({ ok: true });
+    const vacanteId = req.params.id;
+    const postulantes = await Postulante.find({ vacanteId });
+    for (const p of postulantes) {
+      if (p.cvPublicId) {
+        try {
+          await cloudinary.uploader.destroy(p.cvPublicId, { resource_type: 'raw' });
+        } catch (e) {
+          console.error('Error eliminando CV de Cloudinary:', e.message);
+        }
+      }
+    }
+    await Postulante.deleteMany({ vacanteId });
+    await Vacante.findByIdAndDelete(vacanteId);
+    res.json({ ok: true, mensaje: 'Vacante y postulantes eliminados correctamente' });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
