@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>RR.HH. Intelligence</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<style>
+  .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+  .anamorphic-badge { border-left: 2px solid #4cd6ff; }
+  body { font-family: 'Inter', sans-serif; background: #f7f9fb; color: #191c1e; margin: 0; }
+  .page { display: none; }
+  .page.active { display: block; animation: fadeIn 0.25s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  .sidebar-link { display: flex; align-items: center; padding: 10px 12px; border-radius: 4px; color: #515f74; font-weight: 600; font-family: 'Manrope', sans-serif; cursor: pointer; transition: all 0.15s; gap: 10px; border: none; background: none; width: 100%; text-align: left; }
+  .sidebar-link:hover { background: #eceef0; color: #000f22; }
+  .sidebar-link.active { background: white; color: #000f22; border-left: 4px solid #4cd6ff; padding-left: 8px; }
+  .btn-primary { background: #000f22; color: white; padding: 10px 20px; border-radius: 4px; font-weight: 700; font-size: 13px; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: opacity 0.15s; font-family: 'Manrope', sans-serif; }
+  .btn-primary:hover { opacity: 0.85; }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-outline { background: transparent; color: #000f22; padding: 10px 20px; border-radius: 4px; font-weight: 700; font-size: 13px; border: 1.5px solid #000f22; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all 0.15s; font-family: 'Manrope', sans-serif; }
+  .btn-outline:hover { background: #f2f4f6; }
+  .input-field { width: 100%; border: 1.5px solid #c4c6ce; border-radius: 4px; padding: 10px 14px; font-size: 14px; outline: none; transition: border-color 0.15s; background: white; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+  .input-field:focus { border-color: #000f22; }
+  .tag { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 3px; font-size: 11px; font-weight: 700; font-family: 'Manrope', sans-serif; }
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; align-items: center; justify-content: center; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: white; border-radius: 8px; padding: 32px; max-width: 580px; width: 90%; max-height: 90vh; overflow-y: auto; }
+  .stat-card { background: white; border-radius: 8px; padding: 20px 24px; border: 1px solid #e0e3e5; }
+  .vacancy-card { background: white; border-radius: 8px; padding: 24px; border: 1px solid #e0e3e5; transition: all 0.2s; }
+  .vacancy-card:hover { border-color: #4cd6ff; box-shadow: 0 4px 20px rgba(0,0,0,0.06); }
+  .candidate-row { padding: 16px 20px; border-radius: 8px; background: white; margin-bottom: 10px; border: 1px solid #e0e3e5; transition: all 0.2s; }
+  .candidate-row:hover { border-color: #000f22; transform: translateX(3px); }
+  .rank-1 { border-left: 3px solid #f59e0b; }
+  .rank-2 { border-left: 3px solid #94a3b8; }
+  .rank-3 { border-left: 3px solid #b45309; }
+  .gemini-badge { background: linear-gradient(135deg, #4285f4, #34a853, #fbbc04, #ea4335); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 800; }
+  .link-box { background: #000f22; border-radius: 6px; padding: 14px 18px; font-family: monospace; font-size: 12px; color: #4cd6ff; display: flex; align-items: center; justify-content: space-between; gap: 12px; word-break: break-all; }
+  .copy-btn { background: rgba(76,214,255,0.15); border: 1px solid rgba(76,214,255,0.3); color: #4cd6ff; border-radius: 4px; padding: 6px 14px; font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap; font-family: 'Manrope'; flex-shrink: 0; }
+  .copy-btn:hover { background: rgba(76,214,255,0.3); }
+  .notification { position: fixed; bottom: 24px; right: 24px; background: #000f22; color: white; padding: 14px 20px; border-radius: 8px; font-size: 13px; font-weight: 600; display: none; z-index: 200; align-items: center; gap: 8px; border-left: 3px solid #4cd6ff; }
+  .notification.show { display: flex; }
+  .spinner { width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .postulant-page { min-height: 100vh; background: linear-gradient(135deg, #000f22 0%, #0a2540 60%, #001f38 100%); padding: 40px 20px; }
+  .form-card { background: white; border-radius: 12px; padding: 40px; max-width: 660px; margin: 0 auto; }
+  .progress-bar { height: 3px; background: #4cd6ff; transition: width 0.4s ease; border-radius: 2px; }
+  .question-row { background: #f2f4f6; border-radius: 6px; padding: 14px 16px; margin-bottom: 10px; display: flex; gap: 10px; align-items: flex-start; }
+  .api-status { display: flex; align-items: center; gap: 8px; font-size: 13px; padding: 10px 14px; border-radius: 6px; margin-bottom: 20px; }
+  .api-status.ok { background: #e8f5e9; color: #1b5e20; }
+  .api-status.error { background: #ffebee; color: #b71c1c; }
+  .api-status.checking { background: #f2f4f6; color: #43474d; }
+</style>
+</head>
+<body>
+
+<!-- NOTIFICATION -->
+<div class="notification" id="notification">
+  <span class="material-symbols-outlined" style="font-size:18px">check_circle</span>
+  <span id="notif-text"></span>
+</div>
+
+<!-- MODAL: Nueva Vacante -->
+<div class="modal-overlay" id="modal-vacante">
+  <div class="modal">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
+      <h2 style="font-family:Manrope;font-size:20px;font-weight:800;color:#000f22">Nueva Vacante</h2>
+      <button onclick="closeModal('modal-vacante')" style="background:none;border:none;cursor:pointer;color:#74777e"><span class="material-symbols-outlined">close</span></button>
+    </div>
+    <div style="margin-bottom:14px">
+      <label style="font-size:11px;font-weight:700;color:#43474d;text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:6px">Nombre del Puesto *</label>
+      <input class="input-field" id="v-nombre" placeholder="Ej: Peón de Campo, Administrativo..."/>
+    </div>
+    <div style="margin-bottom:14px">
+      <label style="font-size:11px;font-weight:700;color:#43474d;text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:6px">Área *</label>
+      <select class="input-field" id="v-area">
+        <option>Campo / Operaciones</option>
+        <option>Administración</option>
+        <option>Comercial / Ventas</option>
+        <option>Recursos Humanos</option>
+        <option>Logística</option>
+        <option>Técnico / IT</option>
+      </select>
+    </div>
+    <div style="margin-bottom:14px">
+      <label style="font-size:11px;font-weight:700;color:#43474d;text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:6px">Descripción</label>
+      <textarea class="input-field" id="v-desc" rows="3" placeholder="Responsabilidades principales..."></textarea>
+    </div>
+    <div style="margin-bottom:24px">
+      <label style="font-size:11px;font-weight:700;color:#43474d;text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:6px">Requisitos (para la IA)</label>
+      <textarea class="input-field" id="v-req" rows="2" placeholder="Ej: experiencia en riego, disponibilidad para viajar..."></textarea>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end">
+      <button class="btn-outline" onclick="closeModal('modal-vacante')">Cancelar</button>
+      <button class="btn-primary" id="btn-crear-vacante" onclick="crearVacante()">
+        <span class="material-symbols-outlined" style="font-size:16px">add</span>Crear Vacante
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Cuestionario Builder -->
+<div class="modal-overlay" id="modal-cuestionario">
+  <div class="modal" style="max-width:680px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
+      <div>
+        <h2 style="font-family:Manrope;font-size:20px;font-weight:800;color:#000f22" id="modal-cues-titulo">Cuestionario</h2>
+        <p style="font-size:12px;color:#74777e;margin-top:2px">Preguntas que verán los postulantes</p>
+      </div>
+      <button onclick="closeModal('modal-cuestionario')" style="background:none;border:none;cursor:pointer;color:#74777e"><span class="material-symbols-outlined">close</span></button>
+    </div>
+    <div id="preguntas-container"></div>
+    <button class="btn-outline" style="width:100%;justify-content:center;margin-bottom:24px" onclick="agregarPregunta()">
+      <span class="material-symbols-outlined" style="font-size:16px">add</span>Agregar Pregunta
+    </button>
+    <div style="display:flex;gap:10px;justify-content:flex-end">
+      <button class="btn-outline" onclick="closeModal('modal-cuestionario')">Cancelar</button>
+      <button class="btn-primary" id="btn-guardar-cuest" onclick="guardarCuestionario()">
+        <span class="material-symbols-outlined" style="font-size:16px">link</span>Guardar y Generar Enlace
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Ver Enlace -->
+<div class="modal-overlay" id="modal-enlace">
+  <div class="modal" style="max-width:500px">
+    <div style="text-align:center;margin-bottom:24px">
+      <div style="width:52px;height:52px;background:#eceef0;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 14px">
+        <span class="material-symbols-outlined" style="color:#000f22;font-size:26px">link</span>
+      </div>
+      <h2 style="font-family:Manrope;font-size:20px;font-weight:800;color:#000f22">Enlace Generado</h2>
+      <p style="font-size:13px;color:#74777e;margin-top:4px" id="enlace-vacante-nombre"></p>
+    </div>
+    <div class="link-box" style="margin-bottom:18px">
+      <span id="enlace-url" style="flex:1"></span>
+      <button class="copy-btn" onclick="copiarEnlace()">COPIAR</button>
+    </div>
+    <p style="font-size:12px;color:#74777e;text-align:center;margin-bottom:20px">Enviá este enlace al postulante. Sus respuestas llegarán directamente a la base de datos.</p>
+    <button class="btn-primary" style="width:100%;justify-content:center" onclick="closeModal('modal-enlace')">Entendido</button>
+  </div>
+</div>
+
+<!-- LAYOUT PRINCIPAL -->
+<div id="reclutador-app" style="display:flex;min-height:100vh">
+
+  <!-- SIDEBAR -->
+  <aside style="width:230px;min-width:230px;background:#f2f4f6;border-right:1px solid #e0e3e5;display:flex;flex-direction:column;padding:24px 12px;position:fixed;height:100vh;z-index:40;overflow-y:auto">
+    <div style="padding:0 12px;margin-bottom:28px">
+      <div style="font-family:Manrope;font-weight:800;font-size:16px;color:#000f22">RR.HH.</div>
+      <div style="font-family:Manrope;font-weight:600;font-size:10px;color:#74777e;text-transform:uppercase;letter-spacing:0.1em">Intelligence</div>
+    </div>
+
+    <!-- Estado API -->
+    <div id="api-status-indicator" style="margin:0 4px 16px;background:#f2f4f6;border-radius:6px;padding:8px 10px;font-size:11px;font-family:Manrope;font-weight:700;display:flex;align-items:center;gap:6px;color:#74777e">
+      <span style="width:7px;height:7px;border-radius:50%;background:#c4c6ce;flex-shrink:0"></span>
+      Verificando API...
+    </div>
+
+    <nav style="flex:1;display:flex;flex-direction:column;gap:2px">
+      <button class="sidebar-link active" onclick="showPage('dashboard')" id="nav-dashboard"><span class="material-symbols-outlined" style="font-size:20px">dashboard</span>Dashboard</button>
+      <button class="sidebar-link" onclick="showPage('vacantes')" id="nav-vacantes"><span class="material-symbols-outlined" style="font-size:20px">work</span>Vacantes</button>
+      <button class="sidebar-link" onclick="showPage('postulantes')" id="nav-postulantes"><span class="material-symbols-outlined" style="font-size:20px">group</span>Postulantes</button>
+      <button class="sidebar-link" onclick="showPage('ranking')" id="nav-ranking"><span class="material-symbols-outlined" style="font-size:20px">psychology</span>Ranking IA</button>
+    </nav>
+    <div style="padding:12px 4px 0">
+      <button class="btn-primary" style="width:100%;justify-content:center" onclick="openModal('modal-vacante')">
+        <span class="material-symbols-outlined" style="font-size:16px">add</span>Nueva Vacante
+      </button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main style="margin-left:230px;flex:1">
+    <header style="position:sticky;top:0;background:rgba(247,249,251,0.92);backdrop-filter:blur(12px);border-bottom:1px solid #e0e3e5;padding:0 32px;height:58px;display:flex;align-items:center;justify-content:space-between;z-index:30">
+      <div style="font-size:12px;color:#74777e;font-weight:600;font-family:Manrope;text-transform:uppercase;letter-spacing:0.06em" id="breadcrumb">Dashboard</div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <span style="font-size:12px;color:#74777e;font-family:Manrope" id="api-url-display"></span>
+        <div style="width:32px;height:32px;background:#000f22;border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-size:12px;font-weight:700;font-family:Manrope">RH</div>
+      </div>
+    </header>
+
+    <div style="padding:32px;max-width:1200px">
+
+      <!-- PAGE: DASHBOARD -->
+      <div class="page active" id="page-dashboard">
+        <div style="margin-bottom:28px">
+          <h1 style="font-family:Manrope;font-size:30px;font-weight:800;color:#000f22;margin-bottom:4px">Dashboard</h1>
+          <p style="color:#74777e;font-size:14px">Resumen del proceso de reclutamiento</p>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:28px">
+          <div class="stat-card"><div style="font-size:11px;font-weight:700;color:#74777e;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px">Vacantes Activas</div><div style="font-size:30px;font-weight:800;font-family:Manrope;color:#000f22" id="stat-vacantes">—</div></div>
+          <div class="stat-card"><div style="font-size:11px;font-weight:700;color:#74777e;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px">Postulantes Totales</div><div style="font-size:30px;font-weight:800;font-family:Manrope;color:#000f22" id="stat-postulantes">—</div></div>
+          <div class="stat-card"><div style="font-size:11px;font-weight:700;color:#74777e;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px">Con Cuestionario</div><div style="font-size:30px;font-weight:800;font-family:Manrope;color:#000f22" id="stat-conCuest">—</div></div>
+          <div class="stat-card" style="background:#000f22;border-color:#000f22"><div style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px">Rankings IA</div><div style="font-size:30px;font-weight:800;font-family:Manrope;color:#4cd6ff" id="stat-rankings">—</div></div>
+        </div>
+        <div style="background:white;border-radius:8px;border:1px solid #e0e3e5;padding:24px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+            <h2 style="font-family:Manrope;font-weight:800;font-size:17px;color:#000f22">Vacantes Recientes</h2>
+            <button class="btn-outline" style="font-size:12px;padding:7px 14px" onclick="showPage('vacantes')">Ver todas</button>
+          </div>
+          <div id="dashboard-list"></div>
+        </div>
+      </div>
+
+      <!-- PAGE: VACANTES -->
+      <div class="page" id="page-vacantes">
+        <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:28px">
+          <div>
+            <h1 style="font-family:Manrope;font-size:30px;font-weight:800;color:#000f22;margin-bottom:4px">Vacantes</h1>
+            <p style="color:#74777e;font-size:14px">Gestioná los puestos y cuestionarios</p>
+          </div>
+          <button class="btn-primary" onclick="openModal('modal-vacante')"><span class="material-symbols-outlined" style="font-size:16px">add</span>Nueva Vacante</button>
+        </div>
+        <div id="vacantes-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:18px"></div>
+      </div>
+
+      <!-- PAGE: POSTULANTES -->
+      <div class="page" id="page-postulantes">
+        <div style="margin-bottom:28px">
+          <h1 style="font-family:Manrope;font-size:30px;font-weight:800;color:#000f22;margin-bottom:4px">Postulantes</h1>
+          <p style="color:#74777e;font-size:14px">Respuestas recibidas desde MongoDB</p>
+        </div>
+        <div style="background:white;border-radius:8px;border:1px solid #e0e3e5;padding:24px">
+          <div style="display:flex;gap:12px;margin-bottom:18px">
+            <select class="input-field" id="filtro-vacante" style="max-width:260px" onchange="loadPostulantes()">
+              <option value="">Todas las vacantes</option>
+            </select>
+            <button class="btn-outline" style="padding:10px 14px" onclick="loadPostulantes()">
+              <span class="material-symbols-outlined" style="font-size:16px">refresh</span>
+            </button>
+          </div>
+          <div id="postulantes-list"></div>
+        </div>
+      </div>
+
+      <!-- PAGE: RANKING -->
+      <div class="page" id="page-ranking">
+        <div style="margin-bottom:28px">
+          <h1 style="font-family:Manrope;font-size:30px;font-weight:800;color:#000f22;margin-bottom:4px">Ranking <span class="gemini-badge">IA</span></h1>
+          <p style="color:#74777e;font-size:14px">Análisis y ranking automático con Gemini</p>
+        </div>
+        <div style="background:white;border-radius:8px;border:1px solid #e0e3e5;padding:24px;margin-bottom:20px">
+          <div style="display:flex;gap:12px;align-items:flex-end">
+            <div style="flex:1">
+              <label style="font-size:11px;font-weight:700;color:#43474d;text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:6px">Vacante a Analizar</label>
+              <select class="input-field" id="ranking-select"></select>
+            </div>
+            <button class="btn-primary" id="btn-ranking" onclick="generarRanking()">
+              <span class="material-symbols-outlined" style="font-size:16px">psychology</span>Analizar con Gemini
+            </button>
+          </div>
+        </div>
+        <div id="ranking-result"></div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<!-- VISTA DEL POSTULANTE -->
+<div id="postulant-view" style="display:none" class="postulant-page">
+  <div style="font-family:Manrope;font-weight:800;font-size:12px;color:rgba(255,255,255,0.4);letter-spacing:0.12em;text-transform:uppercase;text-align:center;margin-bottom:24px">RR.HH. Intelligence</div>
+  <div class="form-card">
+    <div style="margin-bottom:6px;display:flex;justify-content:space-between;align-items:center">
+      <span style="font-size:11px;font-weight:700;color:#74777e;text-transform:uppercase;letter-spacing:0.05em" id="form-area-label"></span>
+      <span style="font-size:11px;color:#74777e" id="progress-pct">0%</span>
+    </div>
+    <div style="height:3px;background:#e0e3e5;border-radius:2px;margin-bottom:24px">
+      <div class="progress-bar" id="progress-bar" style="width:0%"></div>
+    </div>
+    <h1 style="font-family:Manrope;font-size:24px;font-weight:800;color:#000f22;margin-bottom:6px" id="form-title">Cuestionario</h1>
+    <p style="font-size:14px;color:#74777e;margin-bottom:28px" id="form-desc">Completá este formulario para postularte.</p>
+    <div id="form-fields"></div>
+    <div id="form-success" style="display:none;text-align:center;padding:20px 0">
+      <div style="width:60px;height:60px;background:#e8f5e9;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 14px">
+        <span class="material-symbols-outlined" style="font-size:30px;color:#1b5e20">check_circle</span>
+      </div>
+      <h2 style="font-family:Manrope;font-size:22px;font-weight:800;color:#000f22;margin-bottom:8px">¡Enviado con éxito!</h2>
+      <p style="font-size:14px;color:#74777e">Tus respuestas fueron guardadas. El equipo de RR.HH. se pondrá en contacto.</p>
+    </div>
+    <button id="btn-enviar" class="btn-primary" style="width:100%;justify-content:center;margin-top:20px;padding:14px" onclick="enviarFormulario()">
+      <span class="material-symbols-outlined" style="font-size:16px">send</span>Enviar Postulación
+    </button>
+  </div>
+</div>
+
+<script>
+// ─── CONFIG ───────────────────────────────────────────────────────────
+const API_BASE = 'http://localhost:3000/api';
+let currentVacante = null;
+let preguntasTemp = [];
+let vacanteEditandoId = null;
+let respuestasForm = {};
+
+// ─── UTILS ────────────────────────────────────────────────────────────
+function notify(msg, icon = 'check_circle') {
+  const n = document.getElementById('notification');
+  n.innerHTML = `<span class="material-symbols-outlined" style="font-size:18px">${icon}</span><span>${msg}</span>`;
+  n.classList.add('show');
+  setTimeout(() => n.classList.remove('show'), 3000);
+}
+
+function genId() { return Math.random().toString(36).substr(2, 9); }
+
+function setLoading(btnId, loading, label) {
+  const btn = document.getElementById(btnId);
+  if (!btn) return;
+  btn.disabled = loading;
+  btn.innerHTML = loading
+    ? `<div class="spinner"></div>`
+    : label;
+}
+
+async function apiFetch(path, options = {}) {
+  const res = await fetch(API_BASE + path, {
+    headers: { 'Content-Type': 'application/json' },
+    ...options
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: res.statusText }));
+    throw new Error(err.error || 'Error en la API');
+  }
+  return res.json();
+}
+
+// ─── HEALTH CHECK ─────────────────────────────────────────────────────
+async function checkApiHealth() {
+  const ind = document.getElementById('api-status-indicator');
+  const urlDisp = document.getElementById('api-url-display');
+  try {
+    const data = await fetch(API_BASE + '/health').then(r => r.json());
+    const ok = data.db === 'conectado';
+    ind.innerHTML = `<span style="width:7px;height:7px;border-radius:50%;background:${ok?'#4caf50':'#f44336'};flex-shrink:0"></span>${ok ? 'API conectada' : 'DB desconectada'}`;
+    ind.style.color = ok ? '#1b5e20' : '#b71c1c';
+    ind.style.background = ok ? '#e8f5e9' : '#ffebee';
+    urlDisp.textContent = 'localhost:3000';
+    if (ok) loadAllData();
+  } catch {
+    ind.innerHTML = `<span style="width:7px;height:7px;border-radius:50%;background:#f44336;flex-shrink:0"></span>Backend offline`;
+    ind.style.color = '#b71c1c';
+    ind.style.background = '#ffebee';
+    urlDisp.textContent = '⚠ Corré: node src/index.js';
+  }
+}
+
+// ─── NAV ──────────────────────────────────────────────────────────────
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  document.getElementById('nav-' + name).classList.add('active');
+  const labels = { dashboard: 'Dashboard', vacantes: 'Vacantes', postulantes: 'Postulantes', ranking: 'Ranking IA' };
+  document.getElementById('breadcrumb').textContent = labels[name];
+  if (name === 'postulantes') loadPostulantes();
+  if (name === 'vacantes') loadVacantes();
+  if (name === 'dashboard') loadDashboard();
+}
+
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+// ─── LOAD DATA ────────────────────────────────────────────────────────
+async function loadAllData() {
+  await Promise.all([loadDashboard(), loadVacantes(), updateSelects()]);
+}
+
+async function loadDashboard() {
+  try {
+    const [vacantes, posts] = await Promise.all([
+      apiFetch('/vacantes'),
+      apiFetch('/postulantes')
+    ]);
+    document.getElementById('stat-vacantes').textContent = vacantes.length;
+    document.getElementById('stat-postulantes').textContent = posts.length;
+    document.getElementById('stat-conCuest').textContent = vacantes.filter(v => v.cuestionario?.length > 0).length;
+    document.getElementById('stat-rankings').textContent = vacantes.filter(v => {
+      const vPosts = posts.filter(p => p.vacanteId?._id === v._id || p.vacanteId === v._id);
+      return vPosts.some(p => p.puntajeIA != null);
+    }).length;
+    renderDashboardList(vacantes, posts);
+  } catch (e) { console.error(e); }
+}
+
+function renderDashboardList(vacantes, posts) {
+  const el = document.getElementById('dashboard-list');
+  if (!vacantes.length) {
+    el.innerHTML = `<div style="text-align:center;padding:32px;color:#74777e"><p>No hay vacantes. <button onclick="openModal('modal-vacante')" style="background:none;border:none;color:#000f22;font-weight:700;cursor:pointer;text-decoration:underline">Crear la primera</button></p></div>`;
+    return;
+  }
+  el.innerHTML = vacantes.slice(0, 6).map(v => {
+    const pCount = posts.filter(p => (p.vacanteId?._id || p.vacanteId) === v._id).length;
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #f2f4f6">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="width:38px;height:38px;background:#eceef0;border-radius:8px;display:flex;align-items:center;justify-content:center">
+          <span class="material-symbols-outlined" style="font-size:18px;color:#000f22">work</span>
+        </div>
+        <div>
+          <div style="font-weight:700;font-family:Manrope;font-size:14px;color:#000f22">${v.nombre}</div>
+          <div style="font-size:12px;color:#74777e">${v.area}</div>
+        </div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:18px;font-weight:800;font-family:Manrope;color:#000f22">${pCount}</div>
+        <div style="font-size:11px;color:#74777e">postulantes</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function loadVacantes() {
+  const grid = document.getElementById('vacantes-grid');
+  grid.innerHTML = `<div style="padding:40px;text-align:center;color:#74777e;background:white;border-radius:8px;border:1px solid #e0e3e5"><div class="spinner" style="margin:0 auto;border-color:#e0e3e5;border-top-color:#000f22"></div></div>`;
+  try {
+    const vacantes = await apiFetch('/vacantes');
+    if (!vacantes.length) {
+      grid.innerHTML = `<div style="text-align:center;padding:60px;background:white;border-radius:8px;border:1px dashed #c4c6ce;grid-column:1/-1">
+        <span class="material-symbols-outlined" style="font-size:52px;color:#c4c6ce;display:block;margin-bottom:10px">work_outline</span>
+        <p style="color:#74777e;margin-bottom:16px">No hay vacantes</p>
+        <button class="btn-primary" onclick="openModal('modal-vacante')"><span class="material-symbols-outlined" style="font-size:16px">add</span>Crear Primera</button>
+      </div>`;
+      return;
+    }
+    // Get postulantes count
+    const posts = await apiFetch('/postulantes');
+    grid.innerHTML = vacantes.map(v => {
+      const pCount = posts.filter(p => (p.vacanteId?._id || p.vacanteId) === v._id).length;
+      const hasCuest = v.cuestionario?.length > 0;
+      return `<div class="vacancy-card">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
+          <div>
+            <div style="font-size:10px;font-weight:700;color:#74777e;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:3px">${v.area}</div>
+            <h3 style="font-family:Manrope;font-weight:800;font-size:17px;color:#000f22">${v.nombre}</h3>
+          </div>
+          <span class="tag" style="background:${hasCuest?'#e8f5e9':'#fff3e0'};color:${hasCuest?'#1b5e20':'#e65100'}">${hasCuest?'CON CUEST.':'SIN CUEST.'}</span>
+        </div>
+        <p style="font-size:13px;color:#74777e;margin-bottom:14px;line-height:1.6">${v.descripcion || 'Sin descripción'}</p>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
+          <span class="material-symbols-outlined" style="font-size:15px;color:#74777e">group</span>
+          <span style="font-size:13px;color:#74777e;font-weight:600">${pCount} postulante${pCount!==1?'s':''}</span>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn-primary" style="font-size:11px;padding:7px 12px" onclick="abrirCuestionario('${v._id}','${v.nombre.replace(/'/g,"\\'")}')">
+            <span class="material-symbols-outlined" style="font-size:13px">${hasCuest?'edit':'add'}</span>${hasCuest?'Editar Cuest.':'Crear Cuest.'}
+          </button>
+          ${hasCuest ? `<button class="btn-outline" style="font-size:11px;padding:7px 12px" onclick="mostrarEnlace('${v._id}','${v.nombre.replace(/'/g,"\\'")}')">
+            <span class="material-symbols-outlined" style="font-size:13px">link</span>Ver Enlace
+          </button>` : ''}
+          ${pCount > 0 ? `<button class="btn-outline" style="font-size:11px;padding:7px 12px" onclick="showPage('ranking');document.getElementById('ranking-select').value='${v._id}'">
+            <span class="material-symbols-outlined" style="font-size:13px">psychology</span>Ranking
+          </button>` : ''}
+        </div>
+      </div>`;
+    }).join('');
+  } catch (e) {
+    grid.innerHTML = `<div style="padding:32px;text-align:center;color:#b71c1c;background:#ffebee;border-radius:8px;grid-column:1/-1">Error: ${e.message}</div>`;
+  }
+}
+
+async function loadPostulantes() {
+  const filtro = document.getElementById('filtro-vacante')?.value || '';
+  const list = document.getElementById('postulantes-list');
+  list.innerHTML = `<div style="text-align:center;padding:24px"><div class="spinner" style="margin:0 auto;border-color:#e0e3e5;border-top-color:#000f22"></div></div>`;
+  try {
+    const url = '/postulantes' + (filtro ? '?vacanteId=' + filtro : '');
+    const posts = await apiFetch(url);
+    if (!posts.length) {
+      list.innerHTML = `<div style="text-align:center;padding:32px;color:#74777e">
+        <span class="material-symbols-outlined" style="font-size:44px;opacity:0.3;display:block;margin-bottom:8px">person_outline</span>
+        <p>No hay postulantes${filtro?' para esta vacante':' todavía'}.</p>
+      </div>`;
+      return;
+    }
+    list.innerHTML = posts.map(p => {
+      const nombre = p.nombre || 'Postulante';
+      const vacNombre = p.vacanteId?.nombre || '';
+      const fecha = new Date(p.createdAt).toLocaleDateString('es-AR');
+      const respEntries = Object.entries(Object.fromEntries ? Object.fromEntries(Object.entries(p.respuestas || {})) : p.respuestas || {}).slice(0,3);
+      return `<div class="candidate-row">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div style="display:flex;align-items:center;gap:12px">
+            <div style="width:40px;height:40px;background:#eceef0;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-family:Manrope;font-size:14px;color:#000f22;flex-shrink:0">${nombre.charAt(0).toUpperCase()}</div>
+            <div>
+              <div style="font-weight:700;font-family:Manrope;font-size:14px;color:#000f22">${nombre}</div>
+              <div style="font-size:12px;color:#74777e">${vacNombre} • ${fecha}</div>
+            </div>
+          </div>
+          ${p.puntajeIA ? `<div style="background:#e8f5e9;border-radius:6px;padding:6px 12px;text-align:center">
+            <div style="font-size:18px;font-weight:800;font-family:Manrope;color:#1b5e20">${p.puntajeIA}</div>
+            <div style="font-size:10px;color:#1b5e20;font-weight:700">pts IA</div>
+          </div>` : `<span class="tag" style="background:#e3f2fd;color:#0d47a1">RECIBIDO</span>`}
+        </div>
+        ${respEntries.length ? `<div style="margin-top:10px;padding-top:10px;border-top:1px solid #f2f4f6;display:flex;gap:16px;flex-wrap:wrap">
+          ${respEntries.map(([k,v]) => `<div style="font-size:12px"><span style="color:#74777e">${k}:</span> <span style="font-weight:600">${v}</span></div>`).join('')}
+        </div>` : ''}
+      </div>`;
+    }).join('');
+  } catch (e) {
+    list.innerHTML = `<div style="padding:16px;color:#b71c1c;background:#ffebee;border-radius:6px">Error: ${e.message}</div>`;
+  }
+}
+
+async function updateSelects() {
+  try {
+    const vacantes = await apiFetch('/vacantes');
+    const selects = ['filtro-vacante', 'ranking-select'];
+    selects.forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      const defaultOpt = id === 'filtro-vacante' ? '<option value="">Todas las vacantes</option>' : '<option value="">-- Elegir vacante --</option>';
+      el.innerHTML = defaultOpt + vacantes.map(v => `<option value="${v._id}">${v.nombre}</option>`).join('');
+    });
+  } catch (e) { console.error(e); }
+}
+
+// ─── CREAR VACANTE ────────────────────────────────────────────────────
+async function crearVacante() {
+  const nombre = document.getElementById('v-nombre').value.trim();
+  const area = document.getElementById('v-area').value;
+  const descripcion = document.getElementById('v-desc').value.trim();
+  const requisitos = document.getElementById('v-req').value.trim();
+  if (!nombre) { notify('Ingresá el nombre del puesto', 'warning'); return; }
+  setLoading('btn-crear-vacante', true);
+  try {
+    await apiFetch('/vacantes', {
+      method: 'POST',
+      body: JSON.stringify({ nombre, area, descripcion, requisitos })
+    });
+    closeModal('modal-vacante');
+    ['v-nombre','v-desc','v-req'].forEach(id => document.getElementById(id).value = '');
+    notify('Vacante "' + nombre + '" creada en MongoDB');
+    await loadAllData();
+  } catch (e) {
+    notify('Error: ' + e.message, 'error');
+  }
+  setLoading('btn-crear-vacante', false, '<span class="material-symbols-outlined" style="font-size:16px">add</span>Crear Vacante');
+}
+
+// ─── CUESTIONARIO ─────────────────────────────────────────────────────
+async function abrirCuestionario(id, nombre) {
+  vacanteEditandoId = id;
+  document.getElementById('modal-cues-titulo').textContent = 'Cuestionario: ' + nombre;
+  try {
+    const v = await apiFetch('/vacantes/' + id);
+    preguntasTemp = v.cuestionario?.length > 0 ? v.cuestionario.map(p => ({...p, id: p._id || genId()})) : [
+      { id: genId(), texto: 'Nombre completo', tipo: 'texto' },
+      { id: genId(), texto: 'Teléfono de contacto', tipo: 'texto' },
+      { id: genId(), texto: '¿Cuántos años de experiencia tenés?', tipo: 'numero' }
+    ];
+  } catch { preguntasTemp = [{ id: genId(), texto: 'Nombre completo', tipo: 'texto' }]; }
+  renderPreguntas();
+  openModal('modal-cuestionario');
+}
+
+function renderPreguntas() {
+  document.getElementById('preguntas-container').innerHTML = preguntasTemp.map((p, i) => `
+    <div class="question-row">
+      <span style="font-size:11px;font-weight:700;color:#74777e;padding-top:10px;min-width:18px">${i+1}.</span>
+      <input class="input-field" style="flex:1" value="${p.texto}" onchange="updateP('${p.id}','texto',this.value)" placeholder="Pregunta..."/>
+      <select class="input-field" style="width:120px;flex-shrink:0" onchange="updateP('${p.id}','tipo',this.value)">
+        <option value="texto" ${p.tipo==='texto'?'selected':''}>Texto</option>
+        <option value="numero" ${p.tipo==='numero'?'selected':''}>Número</option>
+        <option value="si_no" ${p.tipo==='si_no'?'selected':''}>Sí / No</option>
+      </select>
+      <button onclick="delP('${p.id}')" style="background:none;border:none;cursor:pointer;color:#c4c6ce;padding:8px 4px;flex-shrink:0"><span class="material-symbols-outlined" style="font-size:18px">delete</span></button>
+    </div>`).join('');
+}
+
+function updateP(id, f, v) { const p = preguntasTemp.find(p=>p.id===id); if(p) p[f]=v; }
+function delP(id) { preguntasTemp = preguntasTemp.filter(p=>p.id!==id); renderPreguntas(); }
+function agregarPregunta() { preguntasTemp.push({id:genId(),texto:'',tipo:'texto'}); renderPreguntas(); }
+
+async function guardarCuestionario() {
+  const preguntas = preguntasTemp.filter(p => p.texto.trim());
+  if (!preguntas.length) { notify('Agregá al menos una pregunta', 'warning'); return; }
+  setLoading('btn-guardar-cuest', true);
+  try {
+    await apiFetch('/vacantes/' + vacanteEditandoId + '/cuestionario', {
+      method: 'PUT',
+      body: JSON.stringify({ preguntas })
+    });
+    closeModal('modal-cuestionario');
+    notify('Cuestionario guardado en MongoDB');
+    await loadAllData();
+    mostrarEnlaceById(vacanteEditandoId);
+  } catch (e) { notify('Error: ' + e.message, 'error'); }
+  setLoading('btn-guardar-cuest', false, '<span class="material-symbols-outlined" style="font-size:16px">link</span>Guardar y Generar Enlace');
+}
+
+// ─── ENLACE ───────────────────────────────────────────────────────────
+function generarLink(vacanteId) {
+  return window.location.href.split('?')[0] + '?form=' + vacanteId;
+}
+
+function mostrarEnlace(id, nombre) {
+  document.getElementById('enlace-vacante-nombre').textContent = 'Para: ' + nombre;
+  document.getElementById('enlace-url').textContent = generarLink(id);
+  openModal('modal-enlace');
+}
+
+async function mostrarEnlaceById(id) {
+  try {
+    const v = await apiFetch('/vacantes/' + id);
+    mostrarEnlace(id, v.nombre);
+  } catch {}
+}
+
+function copiarEnlace() {
+  navigator.clipboard.writeText(document.getElementById('enlace-url').textContent)
+    .then(() => notify('Enlace copiado'));
+}
+
+// ─── RANKING GEMINI ───────────────────────────────────────────────────
+async function generarRanking() {
+  const vacanteId = document.getElementById('ranking-select').value;
+  if (!vacanteId) { notify('Seleccioná una vacante', 'warning'); return; }
+  const result = document.getElementById('ranking-result');
+  result.innerHTML = `<div style="background:#000f22;border-radius:8px;padding:28px;text-align:center;color:white">
+    <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:8px">
+      <div class="spinner"></div><span style="font-weight:700;font-family:Manrope">Analizando con Gemini...</span>
+    </div>
+    <div style="font-size:12px;opacity:0.6">Consultando el backend y procesando respuestas</div>
+  </div>`;
+  const btn = document.getElementById('btn-ranking');
+  btn.disabled = true;
+  try {
+    const data = await apiFetch('/ranking/' + vacanteId, { method: 'POST' });
+    renderRanking(data);
+  } catch (e) {
+    result.innerHTML = `<div style="background:#ffebee;border:1px solid #ffcdd2;border-radius:8px;padding:24px;color:#b71c1c">
+      <div style="font-weight:700;margin-bottom:4px">Error al generar ranking</div>
+      <div style="font-size:13px">${e.message}</div>
+    </div>`;
+  }
+  btn.disabled = false;
+}
+
+function renderRanking(data) {
+  const rankColors = ['#f59e0b','#94a3b8','#b45309'];
+  const rankLabels = ['1°','2°','3°'];
+  const rows = data.ranking.map((r, i) => {
+    const bc = i < 3 ? rankColors[i] : '#e0e3e5';
+    const sc = r.puntaje >= 75 ? '#1b5e20' : r.puntaje >= 50 ? '#e65100' : '#b71c1c';
+    const sbg = r.puntaje >= 75 ? '#e8f5e9' : r.puntaje >= 50 ? '#fff3e0' : '#ffebee';
+    return `<div class="candidate-row rank-${Math.min(i+1,4)}" style="margin-bottom:10px">
+      <div style="display:flex;align-items:flex-start;gap:14px">
+        <div style="font-family:Manrope;font-weight:800;font-size:18px;color:${bc};min-width:28px">${i<3?rankLabels[i]:`${i+1}°`}</div>
+        <div style="width:40px;height:40px;background:#eceef0;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-family:Manrope;font-size:14px;color:#000f22;flex-shrink:0">${(r.nombre||'P').charAt(0).toUpperCase()}</div>
+        <div style="flex:1">
+          <div style="font-weight:700;font-family:Manrope;font-size:15px;color:#000f22;margin-bottom:2px">${r.nombre}</div>
+          <div style="font-size:13px;color:#74777e;line-height:1.5">${r.evaluacion}</div>
+          ${r.fortalezas?.length ? `<div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:6px">
+            ${r.fortalezas.map(f=>`<span class="tag" style="background:#e8f5e9;color:#1b5e20">${f}</span>`).join('')}
+            ${(r.debilidades||[]).map(d=>`<span class="tag" style="background:#ffebee;color:#b71c1c">${d}</span>`).join('')}
+          </div>` : ''}
+        </div>
+        <div style="background:${sbg};border-radius:6px;padding:8px 14px;text-align:center;flex-shrink:0">
+          <div style="font-size:22px;font-weight:800;font-family:Manrope;color:${sc}">${r.puntaje}</div>
+          <div style="font-size:10px;color:${sc};font-weight:700">pts</div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('ranking-result').innerHTML = `
+    <div style="background:white;border-radius:8px;border:1px solid #e0e3e5;padding:24px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px">
+        <div>
+          <h2 style="font-family:Manrope;font-weight:800;font-size:19px;color:#000f22;margin-bottom:4px">Ranking: ${data.vacante.nombre}</h2>
+          <p style="font-size:13px;color:#74777e;max-width:600px">${data.resumen}</p>
+        </div>
+        <div class="anamorphic-badge" style="background:#f2f4f6;padding:8px 14px;border-radius:4px;margin-left:14px;flex-shrink:0">
+          <div style="font-size:10px;font-weight:700;color:#74777e;text-transform:uppercase">Motor</div>
+          <div class="gemini-badge" style="font-size:14px">Gemini</div>
+        </div>
+      </div>
+      ${rows}
+    </div>`;
+}
+
+// ─── FORMULARIO POSTULANTE ────────────────────────────────────────────
+async function initForm(vacanteId) {
+  try {
+    const vacante = await apiFetch('/vacantes/' + vacanteId);
+    currentVacante = vacante;
+    document.getElementById('form-title').textContent = vacante.nombre;
+    document.getElementById('form-desc').textContent = vacante.descripcion || 'Completá este formulario para postularte.';
+    document.getElementById('form-area-label').textContent = vacante.area;
+
+    const fields = document.getElementById('form-fields');
+    if (!vacante.cuestionario?.length) {
+      fields.innerHTML = '<p style="color:#74777e;text-align:center">Este cuestionario no tiene preguntas todavía.</p>';
+      document.getElementById('btn-enviar').style.display = 'none';
+      return;
+    }
+
+    fields.innerHTML = vacante.cuestionario.map((p, i) => `
+      <div style="margin-bottom:20px">
+        <label style="font-size:13px;font-weight:700;color:#191c1e;display:block;margin-bottom:8px">${i+1}. ${p.texto}</label>
+        ${p.tipo === 'si_no'
+          ? `<div style="display:flex;gap:10px">
+              <button onclick="selSiNo('${p._id||i}','Sí',this)" style="flex:1;padding:12px;border:2px solid #e0e3e5;border-radius:6px;font-weight:700;font-family:Manrope;cursor:pointer;background:white;transition:all 0.15s">Sí</button>
+              <button onclick="selSiNo('${p._id||i}','No',this)" style="flex:1;padding:12px;border:2px solid #e0e3e5;border-radius:6px;font-weight:700;font-family:Manrope;cursor:pointer;background:white;transition:all 0.15s">No</button>
+            </div>`
+          : `<input class="input-field" type="${p.tipo==='numero'?'number':'text'}" id="resp-${p._id||i}" placeholder="Tu respuesta..." oninput="updateProgress('${p._id||i}',this.value)"/>`
+        }
+      </div>`).join('');
+    updateProgressBar();
+  } catch (e) {
+    document.getElementById('form-fields').innerHTML = `<p style="color:#b71c1c">Error cargando el formulario: ${e.message}</p>`;
+    document.getElementById('btn-enviar').style.display = 'none';
+  }
+}
+
+function selSiNo(id, val, btn) {
+  respuestasForm[id] = val;
+  btn.parentElement.querySelectorAll('button').forEach(b => { b.style.background='white'; b.style.borderColor='#e0e3e5'; b.style.color='#191c1e'; });
+  btn.style.background='#000f22'; btn.style.borderColor='#000f22'; btn.style.color='white';
+  updateProgressBar();
+}
+
+function updateProgress(id, val) { respuestasForm[id] = val; updateProgressBar(); }
+
+function updateProgressBar() {
+  if (!currentVacante?.cuestionario) return;
+  const total = currentVacante.cuestionario.length;
+  let filled = 0;
+  currentVacante.cuestionario.forEach(p => {
+    const key = p._id || p.id;
+    const el = document.getElementById('resp-' + key);
+    if ((el && el.value.trim()) || respuestasForm[key]) filled++;
+  });
+  const pct = Math.round((filled / total) * 100);
+  document.getElementById('progress-bar').style.width = pct + '%';
+  document.getElementById('progress-pct').textContent = pct + '%';
+}
+
+async function enviarFormulario() {
+  if (!currentVacante) return;
+  // Recolectar respuestas
+  const respObj = {};
+  currentVacante.cuestionario.forEach(p => {
+    const key = p._id || p.id;
+    const el = document.getElementById('resp-' + key);
+    if (el) respuestasForm[key] = el.value;
+    respObj[p.texto] = respuestasForm[key] || '';
+  });
+
+  const nombre = Object.values(respObj)[0] || 'Postulante';
+  setLoading('btn-enviar', true);
+  try {
+    await apiFetch('/postulantes', {
+      method: 'POST',
+      body: JSON.stringify({ vacanteId: currentVacante._id, nombre, respuestas: respObj })
+    });
+    document.getElementById('form-fields').style.display = 'none';
+    document.getElementById('btn-enviar').style.display = 'none';
+    document.getElementById('form-success').style.display = 'block';
+  } catch (e) {
+    setLoading('btn-enviar', false, '<span class="material-symbols-outlined" style="font-size:16px">send</span>Enviar Postulación');
+    notify('Error al enviar: ' + e.message, 'error');
+  }
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', async () => {
+  const params = new URLSearchParams(window.location.search);
+  const formId = params.get('form');
+  if (formId) {
+    document.getElementById('reclutador-app').style.display = 'none';
+    document.getElementById('postulant-view').style.display = 'block';
+    await initForm(formId);
+  } else {
+    await checkApiHealth();
+  }
+});
+</script>
+</body>
+</html>
