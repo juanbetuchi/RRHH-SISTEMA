@@ -315,8 +315,9 @@ function setLoading(btnId, loading, label) {
 }
 
 async function apiFetch(path, options = {}) {
+  const isFormData = options.body instanceof FormData;
   const res = await fetch(API_BASE + path, {
-    headers: { 'Content-Type': 'application/json' },
+    headers: isFormData ? {} : { 'Content-Type': 'application/json' },
     ...options
   });
   if (!res.ok) {
@@ -451,6 +452,9 @@ async function loadVacantes() {
           ${pCount > 0 ? `<button class="btn-outline" style="font-size:11px;padding:7px 12px" onclick="showPage('ranking');document.getElementById('ranking-select').value='${v._id}'">
             <span class="material-symbols-outlined" style="font-size:13px">psychology</span>Ranking
           </button>` : ''}
+          <button onclick="eliminarVacante('${v._id}','${v.nombre.replace(/'/g,"\\'")}',${pCount})" style="background:none;border:1.5px solid #ffcdd2;border-radius:4px;padding:7px 10px;cursor:pointer;color:#b71c1c;font-size:11px;font-weight:700;font-family:Manrope;display:inline-flex;align-items:center;gap:4px;transition:all 0.15s" onmouseover="this.style.background='#ffebee'" onmouseout="this.style.background='none'">
+            <span class="material-symbols-outlined" style="font-size:13px">delete</span>Eliminar
+          </button>
         </div>
       </div>`;
     }).join('');
@@ -477,20 +481,28 @@ async function loadPostulantes() {
       const nombre = p.nombre || 'Postulante';
       const vacNombre = p.vacanteId?.nombre || '';
       const fecha = new Date(p.createdAt).toLocaleDateString('es-AR');
-      const respEntries = Object.entries(Object.fromEntries ? Object.fromEntries(Object.entries(p.respuestas || {})) : p.respuestas || {}).slice(0,3);
-      return `<div class="candidate-row">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <div style="display:flex;align-items:center;gap:12px">
+      const respEntries = Object.entries(p.respuestas || {}).slice(0,3);
+      return `<div class="candidate-row" id="row-${p._id}">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
+          <div style="display:flex;align-items:center;gap:12px;flex:1">
             <div style="width:40px;height:40px;background:#eceef0;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-family:Manrope;font-size:14px;color:#000f22;flex-shrink:0">${nombre.charAt(0).toUpperCase()}</div>
-            <div>
+            <div style="flex:1">
               <div style="font-weight:700;font-family:Manrope;font-size:14px;color:#000f22">${nombre}</div>
               <div style="font-size:12px;color:#74777e">${vacNombre} • ${fecha}</div>
             </div>
           </div>
-          ${p.puntajeIA ? `<div style="background:#e8f5e9;border-radius:6px;padding:6px 12px;text-align:center">
-            <div style="font-size:18px;font-weight:800;font-family:Manrope;color:#1b5e20">${p.puntajeIA}</div>
-            <div style="font-size:10px;color:#1b5e20;font-weight:700">pts IA</div>
-          </div>` : `<span class="tag" style="background:#e3f2fd;color:#0d47a1">RECIBIDO</span>`}
+          <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+            ${p.puntajeIA ? `<div style="background:#e8f5e9;border-radius:6px;padding:6px 12px;text-align:center">
+              <div style="font-size:18px;font-weight:800;font-family:Manrope;color:#1b5e20">${p.puntajeIA}</div>
+              <div style="font-size:10px;color:#1b5e20;font-weight:700">pts IA</div>
+            </div>` : `<span class="tag" style="background:#e3f2fd;color:#0d47a1">RECIBIDO</span>`}
+            ${p.cvUrl ? `<a href="${p.cvUrl}" target="_blank" style="background:#e8f5e9;border:1.5px solid #a5d6a7;border-radius:4px;padding:6px 10px;font-size:11px;font-weight:700;color:#1b5e20;text-decoration:none;display:inline-flex;align-items:center;gap:4px;font-family:Manrope">
+              <span class="material-symbols-outlined" style="font-size:14px">description</span>Ver CV
+            </a>` : ''}
+            <button onclick="eliminarPostulante('${p._id}','${nombre.replace(/'/g,"\\'")}\")" style="background:none;border:none;cursor:pointer;color:#c4c6ce;padding:4px" title="Eliminar postulante">
+              <span class="material-symbols-outlined" style="font-size:18px">delete</span>
+            </button>
+          </div>
         </div>
         ${respEntries.length ? `<div style="margin-top:10px;padding-top:10px;border-top:1px solid #f2f4f6;display:flex;gap:16px;flex-wrap:wrap">
           ${respEntries.map(([k,v]) => `<div style="font-size:12px"><span style="color:#74777e">${k}:</span> <span style="font-weight:600">${v}</span></div>`).join('')}
@@ -499,6 +511,33 @@ async function loadPostulantes() {
     }).join('');
   } catch (e) {
     list.innerHTML = `<div style="padding:16px;color:#b71c1c;background:#ffebee;border-radius:6px">Error: ${e.message}</div>`;
+  }
+}
+
+async function eliminarVacante(id, nombre, pCount) {
+  const msg = pCount > 0
+    ? `¿Eliminar la vacante "${nombre}" y sus ${pCount} postulante${pCount!==1?'s':''}? Esta acción no se puede deshacer.`
+    : `¿Eliminar la vacante "${nombre}"? Esta acción no se puede deshacer.`;
+  if (!confirm(msg)) return;
+  try {
+    await apiFetch('/vacantes/' + id, { method: 'DELETE' });
+    notify('Vacante eliminada correctamente');
+    await loadAllData();
+  } catch (e) {
+    notify('Error al eliminar: ' + e.message, 'error');
+  }
+}
+
+async function eliminarPostulante(id, nombre) {
+  if (!confirm(`¿Eliminar a "${nombre}" y su CV? Esta acción no se puede deshacer.`)) return;
+  try {
+    await apiFetch('/postulantes/' + id, { method: 'DELETE' });
+    notify('Postulante eliminado');
+    document.getElementById('row-' + id)?.remove();
+    await updateSelects();
+    updateStats();
+  } catch (e) {
+    notify('Error: ' + e.message, 'error');
   }
 }
 
@@ -707,6 +746,23 @@ async function initForm(vacanteId) {
           : `<input class="input-field" type="${p.tipo==='numero'?'number':'text'}" id="resp-${p._id||i}" placeholder="Tu respuesta..." oninput="updateProgress('${p._id||i}',this.value)"/>`
         }
       </div>`).join('');
+
+    // Campo para subir CV
+    fields.innerHTML += `
+      <div style="margin-bottom:20px;margin-top:24px;padding-top:20px;border-top:1px solid #e0e3e5">
+        <label style="font-size:13px;font-weight:700;color:#191c1e;display:block;margin-bottom:6px">
+          Adjuntar CV <span style="font-weight:400;color:#74777e">(opcional)</span>
+        </label>
+        <p style="font-size:12px;color:#74777e;margin-bottom:10px">Formatos aceptados: PDF o Word (.docx) — Máximo 10MB</p>
+        <label style="display:flex;align-items:center;gap:10px;background:#f2f4f6;border:2px dashed #c4c6ce;border-radius:8px;padding:16px;cursor:pointer;transition:all 0.15s" id="cv-label" onmouseover="this.style.borderColor='#000f22'" onmouseout="this.style.borderColor='#c4c6ce'">
+          <span class="material-symbols-outlined" style="font-size:28px;color:#74777e">upload_file</span>
+          <div>
+            <div style="font-weight:700;font-size:13px;color:#000f22" id="cv-filename">Hacé clic para seleccionar tu CV</div>
+            <div style="font-size:12px;color:#74777e">PDF o Word</div>
+          </div>
+          <input type="file" id="cv-input" accept=".pdf,.docx" style="display:none" onchange="onCvSelected(this)"/>
+        </label>
+      </div>`;
     updateProgressBar();
   } catch (e) {
     document.getElementById('form-fields').innerHTML = `<p style="color:#b71c1c">Error cargando el formulario: ${e.message}</p>`;
@@ -737,9 +793,22 @@ function updateProgressBar() {
   document.getElementById('progress-pct').textContent = pct + '%';
 }
 
+function onCvSelected(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const maxSize = 10 * 1024 * 1024;
+  if (file.size > maxSize) {
+    notify('El archivo es demasiado grande. Máximo 10MB', 'warning');
+    input.value = '';
+    return;
+  }
+  document.getElementById('cv-filename').textContent = '✓ ' + file.name;
+  document.getElementById('cv-label').style.borderColor = '#4caf50';
+  document.getElementById('cv-label').style.background = '#e8f5e9';
+}
+
 async function enviarFormulario() {
   if (!currentVacante) return;
-  // Recolectar respuestas
   const respObj = {};
   currentVacante.cuestionario.forEach(p => {
     const key = p._id || p.id;
@@ -749,12 +818,18 @@ async function enviarFormulario() {
   });
 
   const nombre = Object.values(respObj)[0] || 'Postulante';
+  const cvInput = document.getElementById('cv-input');
+  const cvFile = cvInput?.files[0];
+
   setLoading('btn-enviar', true);
   try {
-    await apiFetch('/postulantes', {
-      method: 'POST',
-      body: JSON.stringify({ vacanteId: currentVacante._id, nombre, respuestas: respObj })
-    });
+    const formData = new FormData();
+    formData.append('vacanteId', currentVacante._id);
+    formData.append('nombre', nombre);
+    formData.append('respuestas', JSON.stringify(respObj));
+    if (cvFile) formData.append('cv', cvFile);
+
+    await apiFetch('/postulantes', { method: 'POST', body: formData });
     document.getElementById('form-fields').style.display = 'none';
     document.getElementById('btn-enviar').style.display = 'none';
     document.getElementById('form-success').style.display = 'block';
