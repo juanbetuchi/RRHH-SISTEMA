@@ -496,10 +496,10 @@ async function loadPostulantes() {
               <div style="font-size:18px;font-weight:800;font-family:Manrope;color:#1b5e20">${p.puntajeIA}</div>
               <div style="font-size:10px;color:#1b5e20;font-weight:700">pts IA</div>
             </div>` : `<span class="tag" style="background:#e3f2fd;color:#0d47a1">RECIBIDO</span>`}
-            ${p.cvUrl ? `<a href="${p.cvUrl}" target="_blank" style="background:#e8f5e9;border:1.5px solid #a5d6a7;border-radius:4px;padding:6px 10px;font-size:11px;font-weight:700;color:#1b5e20;text-decoration:none;display:inline-flex;align-items:center;gap:4px;font-family:Manrope">
+            ${p.cvUrl ? `<a href="https://docs.google.com/viewer?url=${encodeURIComponent(p.cvUrl)}" target="_blank" style="background:#e8f5e9;border:1.5px solid #a5d6a7;border-radius:4px;padding:6px 10px;font-size:11px;font-weight:700;color:#1b5e20;text-decoration:none;display:inline-flex;align-items:center;gap:4px;font-family:Manrope">
               <span class="material-symbols-outlined" style="font-size:14px">description</span>Ver CV
             </a>` : ''}
-            <button onclick="eliminarPostulante('${p._id}','${nombre.replace(/'/g,"\\'")}\")" style="background:none;border:none;cursor:pointer;color:#c4c6ce;padding:4px" title="Eliminar postulante">
+            <button onclick="eliminarPostulante('${p._id}','${nombre.replace(/'/g, ' ')}')" style="background:none;border:none;cursor:pointer;color:#c4c6ce;padding:4px" title="Eliminar postulante">
               <span class="material-symbols-outlined" style="font-size:18px">delete</span>
             </button>
           </div>
