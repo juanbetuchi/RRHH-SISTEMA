@@ -32,7 +32,7 @@ router.get('/:id/cv', async (req, res) => {
     // Generar URL firmada con expiración
     const url = cloudinary.utils.private_download_url(
       postulante.cvPublicId,
-      postulante.cvNombre?.endsWith('.docx') ? 'docx' : 'pdf',
+      '',
       {
         resource_type: 'raw',
         attachment: true,
