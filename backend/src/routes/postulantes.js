@@ -44,7 +44,9 @@ router.post('/', upload.single('cv'), async (req, res) => {
             resource_type: 'raw',
             folder: 'rrhh-cvs',
             public_id: `cv_${Date.now()}_${nombre.replace(/\s+/g, '_')}`,
-            format: req.file.originalname.endsWith('.docx') ? 'docx' : 'pdf'
+            format: req.file.originalname.endsWith('.docx') ? 'docx' : 'pdf',
+            access_mode: 'public',
+            type: 'upload'
           },
           (error, result) => {
             if (error) reject(error);
