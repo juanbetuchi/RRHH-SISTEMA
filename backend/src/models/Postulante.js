@@ -1,11 +1,7 @@
 const mongoose = require('mongoose');
 
 const PostulanteSchema = new mongoose.Schema({
-  vacanteId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Vacante',
-    required: true
-  },
+  vacanteId: { type: mongoose.Schema.Types.ObjectId, ref: 'Vacante', required: true },
   nombre: { type: String, required: true, trim: true },
   respuestas: { type: Map, of: String, default: {} },
   cvUrl: { type: String, default: null },

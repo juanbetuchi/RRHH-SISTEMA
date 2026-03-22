@@ -5,9 +5,114 @@ const Vacante = require('../models/Vacante');
 const cloudinary = require('cloudinary').v2;
 const multer = require('multer');
 const streamifier = require('streamifier');
-const https = require('https');
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
+
+// GET /api/postulantes
+router.get('/', async (req, res) => {
+  try {
+    const filtro = {};
+    if (req.query.vacanteId) filtro.vacanteId = req.query.vacanteId;
+    const postulantes = await Postulante.find(filtro)
+      .populate('vacanteId', 'nombre area')
+      .sort({ createdAt: -1 });
+    res.json(postulantes);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/postulantes/:id/cv — proxy descarga CV desde Cloudinary
+router.get('/:id/cv', async (req, res) => {
+  try {
+    const postulante = await Postulante.findById(req.params.id);
+    if (!postulante || !postulante.cvPublicId) {
+      return res.status(404).send('CV no encontrado');
+    }
+    // Generar URL firmada con expiración
+    const url = cloudinary.utils.private_download_url(
+      postulante.cvPublicId,
+      postulante.cvNombre?.endsWith('.docx') ? 'docx' : 'pdf',
+      {
+        resource_type: 'raw',
+        attachment: true,
+        expires_at: Math.floor(Date.now() / 1000) + 300
+      }
+    );
+    res.redirect(url);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/postulantes — guardar postulante con CV opcional
+router.post('/', upload.single('cv'), async (req, res) => {
+  try {
+    const { vacanteId, nombre, respuestas } = req.body;
+    if (!vacanteId || !nombre) {
+      return res.status(400).json({ error: 'vacanteId y nombre son requeridos' });
+    }
+    const vacante = await Vacante.findById(vacanteId);
+    if (!vacante) return res.status(404).json({ error: 'Vacante no encontrada' });
+
+    let cvUrl = null;
+    let cvPublicId = null;
+    let cvNombre = null;
+
+    if (req.file) {
+      const ext = req.file.originalname.endsWith('.docx') ? 'docx' : 'pdf';
+      const uploadResult = await new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          {
+            resource_type: 'raw',
+            folder: 'rrhh-cvs',
+            use_filename: true,
+            unique_filename: true,
+            overwrite: false,
+            format: ext
+          },
+          (error, result) => {
+            if (error) reject(error);
+            else resolve(result);
+          }
+        );
+        streamifier.createReadStream(req.file.buffer).pipe(stream);
+      });
+      cvUrl = uploadResult.secure_url;
+      cvPublicId = uploadResult.public_id;
+      cvNombre = req.file.originalname;
+    }
+
+    const respuestasObj = typeof respuestas === 'string' ? JSON.parse(respuestas) : respuestas;
+    const postulante = new Postulante({ vacanteId, nombre, respuestas: respuestasObj, cvUrl, cvPublicId, cvNombre });
+    await postulante.save();
+    res.status(201).json({ ok: true, id: postulante._id });
+  } catch (err) {
+    console.error('Error guardando postulante:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// DELETE /api/postulantes/:id
+router.delete('/:id', async (req, res) => {
+  try {
+    const postulante = await Postulante.findById(req.params.id);
+    if (!postulante) return res.status(404).json({ error: 'Postulante no encontrado' });
+    if (postulante.cvPublicId) {
+      try {
+        await cloudinary.uploader.destroy(postulante.cvPublicId, { resource_type: 'raw' });
+      } catch (e) {
+        console.error('Error eliminando CV:', e.message);
+      }
+    }
+    await Postulante.findByIdAndDelete(req.params.id);
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+module.exports = router;
 
 // GET /api/postulantes
 router.get('/', async (req, res) => {
