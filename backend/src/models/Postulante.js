@@ -5,7 +5,7 @@ const PostulanteSchema = new mongoose.Schema({
   nombre: { type: String, required: true, trim: true },
   respuestas: { type: Map, of: String, default: {} },
   cvUrl: { type: String, default: null },
-  cvPublicId: { type: String, default: null },
+  cvDriveId: { type: String, default: null },
   cvNombre: { type: String, default: null },
   puntajeIA: { type: Number, default: null },
   evaluacionIA: { type: String, default: null }
