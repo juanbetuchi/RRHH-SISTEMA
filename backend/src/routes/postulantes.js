@@ -33,13 +33,11 @@ router.get('/', async (req, res) => {
   }
 });
 
-// GET /api/postulantes/:id/cv — descargar CV
+// GET /api/postulantes/:id/cv
 router.get('/:id/cv', async (req, res) => {
   try {
     const postulante = await Postulante.findById(req.params.id).select('cvData cvNombre cvMimeType');
-    if (!postulante || !postulante.cvData) {
-      return res.status(404).send('CV no encontrado');
-    }
+    if (!postulante || !postulante.cvData) return res.status(404).send('CV no encontrado');
     const buffer = Buffer.from(postulante.cvData, 'base64');
     const nombre = (postulante.cvNombre || 'cv.pdf').replace(/[^a-zA-Z0-9._\-() ]/g, '_');
     res.setHeader('Content-Disposition', `attachment; filename="${nombre}"`);
@@ -55,16 +53,12 @@ router.get('/:id/cv', async (req, res) => {
 router.post('/', upload.single('cv'), async (req, res) => {
   try {
     const { vacanteId, nombre, respuestas } = req.body;
-    if (!vacanteId || !nombre) {
-      return res.status(400).json({ error: 'vacanteId y nombre son requeridos' });
-    }
+    if (!vacanteId || !nombre) return res.status(400).json({ error: 'vacanteId y nombre son requeridos' });
+
     const vacante = await Vacante.findById(vacanteId);
     if (!vacante) return res.status(404).json({ error: 'Vacante no encontrada' });
 
-    let cvData = null;
-    let cvNombre = null;
-    let cvMimeType = null;
-
+    let cvData = null, cvNombre = null, cvMimeType = null;
     if (req.file) {
       cvData = req.file.buffer.toString('base64');
       cvNombre = req.file.originalname;
@@ -78,7 +72,21 @@ router.post('/', upload.single('cv'), async (req, res) => {
       cvUrl: cvData ? 'tiene_cv' : null
     });
     await postulante.save();
+
+    // Responder inmediatamente al postulante
     res.status(201).json({ ok: true, id: postulante._id });
+
+    // Análisis automático en segundo plano (no bloquea la respuesta)
+    setImmediate(async () => {
+      try {
+        const { analizarPostulanteIncremental } = require('./ranking');
+        await analizarPostulanteIncremental(postulante, vacante);
+        console.log(`✅ Análisis automático completado: ${nombre}`);
+      } catch (e) {
+        console.error(`⚠ Error análisis automático (${nombre}):`, e.message);
+      }
+    });
+
   } catch (err) {
     console.error('Error:', err.message);
     res.status(500).json({ error: err.message });
