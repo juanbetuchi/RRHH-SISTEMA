@@ -903,10 +903,17 @@ async function enviarFormulario() {
     formData.append('respuestas', JSON.stringify(respObj));
     if (cvFile) formData.append('cv', cvFile);
 
-    await apiFetch('/postulantes', { method: 'POST', body: formData });
+    const result = await apiFetch('/postulantes', { method: 'POST', body: formData });
     document.getElementById('form-fields').style.display = 'none';
     document.getElementById('btn-enviar').style.display = 'none';
     document.getElementById('form-success').style.display = 'block';
+
+    // Análisis automático en segundo plano desde el frontend
+    if (result.id) {
+      fetch(API_BASE + '/ranking/analizar/' + result.id, { method: 'POST' })
+        .then(() => console.log('Análisis automático iniciado'))
+        .catch(e => console.log('Análisis automático:', e.message));
+    }
   } catch (e) {
     setLoading('btn-enviar', false, '<span class="material-symbols-outlined" style="font-size:16px">send</span>Enviar Postulación');
     notify('Error al enviar: ' + e.message, 'error');
