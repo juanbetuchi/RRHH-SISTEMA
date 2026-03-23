@@ -239,21 +239,44 @@
       <!-- PAGE: RANKING -->
       <div class="page" id="page-ranking">
         <div style="margin-bottom:28px">
-          <h1 style="font-family:Manrope;font-size:30px;font-weight:800;color:#000f22;margin-bottom:4px">Ranking <span class="gemini-badge">IA</span></h1>
-          <p style="color:#74777e;font-size:14px">Análisis y ranking automático con Gemini</p>
-        </div>
-        <div style="background:white;border-radius:8px;border:1px solid #e0e3e5;padding:24px;margin-bottom:20px">
-          <div style="display:flex;gap:12px;align-items:flex-end">
-            <div style="flex:1">
-              <label style="font-size:11px;font-weight:700;color:#43474d;text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:6px">Vacante a Analizar</label>
-              <select class="input-field" id="ranking-select"></select>
+          <div style="display:flex;justify-content:space-between;align-items:flex-end">
+            <div>
+              <h1 style="font-family:Manrope;font-size:30px;font-weight:800;color:#000f22;margin-bottom:4px">Ranking <span class="gemini-badge">IA</span></h1>
+              <p style="color:#74777e;font-size:14px">Top 15 actualizado automáticamente con cada postulante</p>
             </div>
-            <button class="btn-primary" id="btn-ranking" onclick="generarRanking()">
-              <span class="material-symbols-outlined" style="font-size:16px">psychology</span>Analizar con Gemini
-            </button>
           </div>
         </div>
-        <div id="ranking-result"></div>
+
+        <!-- Top 15 Automático -->
+        <div style="background:white;border-radius:8px;border:1px solid #e0e3e5;padding:24px;margin-bottom:20px">
+          <div style="display:flex;gap:12px;align-items:flex-end;margin-bottom:20px">
+            <div style="flex:1">
+              <label style="font-size:11px;font-weight:700;color:#43474d;text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:6px">Ver Top 15 de Vacante</label>
+              <select class="input-field" id="ranking-select" onchange="cargarTop15()"></select>
+            </div>
+            <button class="btn-outline" onclick="cargarTop15()" style="padding:10px 14px">
+              <span class="material-symbols-outlined" style="font-size:16px">refresh</span>
+            </button>
+          </div>
+          <div id="top15-info" style="background:#f2f4f6;border-radius:6px;padding:12px 16px;font-size:13px;color:#43474d;display:flex;align-items:center;gap:8px;margin-bottom:16px">
+            <span class="material-symbols-outlined" style="font-size:16px;color:#4caf50">auto_awesome</span>
+            El ranking se actualiza automáticamente cada vez que llega un postulante nuevo.
+          </div>
+          <div id="top15-result"></div>
+        </div>
+
+        <!-- Análisis Completo Manual -->
+        <div style="background:white;border-radius:8px;border:1px solid #e0e3e5;padding:24px">
+          <h3 style="font-family:Manrope;font-weight:800;font-size:16px;color:#000f22;margin-bottom:6px">Análisis Completo Manual</h3>
+          <p style="font-size:13px;color:#74777e;margin-bottom:16px">Re-analiza todos los postulantes desde cero y actualiza el ranking completo.</p>
+          <div style="display:flex;gap:12px;align-items:center">
+            <select class="input-field" id="ranking-select-manual" style="max-width:300px"></select>
+            <button class="btn-primary" id="btn-ranking" onclick="generarRanking()">
+              <span class="material-symbols-outlined" style="font-size:16px">psychology</span>Analizar Todo con Gemini
+            </button>
+          </div>
+          <div id="ranking-result" style="margin-top:20px"></div>
+        </div>
       </div>
 
     </div>
@@ -496,7 +519,7 @@ async function loadPostulantes() {
               <div style="font-size:18px;font-weight:800;font-family:Manrope;color:#1b5e20">${p.puntajeIA}</div>
               <div style="font-size:10px;color:#1b5e20;font-weight:700">pts IA</div>
             </div>` : `<span class="tag" style="background:#e3f2fd;color:#0d47a1">RECIBIDO</span>`}
-            ${p.cvUrl ? `<a href="${p.cvUrl.replace('/raw/upload/', '/raw/upload/fl_attachment/')}" target="_blank" style="background:#e8f5e9;border:1.5px solid #a5d6a7;border-radius:4px;padding:6px 10px;font-size:11px;font-weight:700;color:#1b5e20;text-decoration:none;display:inline-flex;align-items:center;gap:4px;font-family:Manrope">
+            ${p.cvUrl ? `<a href="${API_BASE}/postulantes/${p._id}/cv" target="_blank" style="background:#e8f5e9;border:1.5px solid #a5d6a7;border-radius:4px;padding:6px 10px;font-size:11px;font-weight:700;color:#1b5e20;text-decoration:none;display:inline-flex;align-items:center;gap:4px;font-family:Manrope">
               <span class="material-symbols-outlined" style="font-size:14px">download</span>Bajar CV
             </a>` : ''}
             <button onclick="eliminarPostulante('${p._id}','${nombre.replace(/'/g, ' ')}')" style="background:none;border:none;cursor:pointer;color:#c4c6ce;padding:4px" title="Eliminar postulante">
@@ -544,7 +567,7 @@ async function eliminarPostulante(id, nombre) {
 async function updateSelects() {
   try {
     const vacantes = await apiFetch('/vacantes');
-    const selects = ['filtro-vacante', 'ranking-select'];
+    const selects = ['filtro-vacante', 'ranking-select', 'ranking-select-manual'];
     selects.forEach(id => {
       const el = document.getElementById(id);
       if (!el) return;
@@ -552,6 +575,57 @@ async function updateSelects() {
       el.innerHTML = defaultOpt + vacantes.map(v => `<option value="${v._id}">${v.nombre}</option>`).join('');
     });
   } catch (e) { console.error(e); }
+}
+
+async function cargarTop15() {
+  const vacanteId = document.getElementById('ranking-select').value;
+  const result = document.getElementById('top15-result');
+  if (!vacanteId) { result.innerHTML = ''; return; }
+  result.innerHTML = `<div style="text-align:center;padding:20px"><div class="spinner" style="margin:0 auto;border-color:#e0e3e5;border-top-color:#000f22"></div></div>`;
+  try {
+    const data = await apiFetch('/ranking/top/' + vacanteId);
+    if (!data.ranking?.length) {
+      result.innerHTML = `<div style="text-align:center;padding:24px;color:#74777e">
+        <span class="material-symbols-outlined" style="font-size:40px;opacity:0.3;display:block;margin-bottom:8px">leaderboard</span>
+        <p>Aún no hay postulantes analizados. El ranking se irá completando automáticamente.</p>
+      </div>`;
+      return;
+    }
+    const rankColors = ['#f59e0b','#94a3b8','#b45309'];
+    const rankLabels = ['1°','2°','3°'];
+    result.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <div style="font-size:13px;color:#74777e"><span style="font-weight:700;color:#000f22">${data.ranking.length}</span> candidatos en el Top 15</div>
+        <div class="anamorphic-badge" style="background:#f2f4f6;padding:6px 12px;border-radius:4px">
+          <span class="gemini-badge" style="font-size:12px">Auto-actualizado</span>
+        </div>
+      </div>
+      ${data.ranking.map((p, i) => {
+        const bc = i < 3 ? rankColors[i] : '#e0e3e5';
+        const sc = p.puntajeIA >= 75 ? '#1b5e20' : p.puntajeIA >= 50 ? '#e65100' : '#b71c1c';
+        const sbg = p.puntajeIA >= 75 ? '#e8f5e9' : p.puntajeIA >= 50 ? '#fff3e0' : '#ffebee';
+        const fecha = new Date(p.createdAt).toLocaleDateString('es-AR');
+        return `<div class="candidate-row" style="margin-bottom:8px;border-left:3px solid ${bc}">
+          <div style="display:flex;align-items:center;gap:12px">
+            <div style="font-family:Manrope;font-weight:800;font-size:18px;color:${bc};min-width:28px">${i<3?rankLabels[i]:`${i+1}°`}</div>
+            <div style="width:38px;height:38px;background:#eceef0;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-family:Manrope;font-size:13px;color:#000f22;flex-shrink:0">${(p.nombre||'P').charAt(0).toUpperCase()}</div>
+            <div style="flex:1">
+              <div style="font-weight:700;font-family:Manrope;font-size:14px;color:#000f22">${p.nombre}</div>
+              <div style="font-size:12px;color:#74777e">${fecha} ${p.evaluacionIA ? '— ' + p.evaluacionIA : ''}</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px">
+              ${p.cvUrl ? `<a href="${API_BASE}/postulantes/${p._id}/cv" style="background:#e8f5e9;border:1px solid #a5d6a7;border-radius:4px;padding:5px 8px;font-size:11px;font-weight:700;color:#1b5e20;text-decoration:none;font-family:Manrope">CV</a>` : ''}
+              <div style="background:${sbg};border-radius:6px;padding:6px 12px;text-align:center">
+                <div style="font-size:20px;font-weight:800;font-family:Manrope;color:${sc}">${p.puntajeIA}</div>
+                <div style="font-size:10px;color:${sc};font-weight:700">pts</div>
+              </div>
+            </div>
+          </div>
+        </div>`;
+      }).join('')}`;
+  } catch (e) {
+    result.innerHTML = `<div style="padding:12px;color:#b71c1c;background:#ffebee;border-radius:6px">Error: ${e.message}</div>`;
+  }
 }
 
 // ─── CREAR VACANTE ────────────────────────────────────────────────────
@@ -653,7 +727,7 @@ function copiarEnlace() {
 
 // ─── RANKING GEMINI ───────────────────────────────────────────────────
 async function generarRanking() {
-  const vacanteId = document.getElementById('ranking-select').value;
+  const vacanteId = document.getElementById('ranking-select-manual').value;
   if (!vacanteId) { notify('Seleccioná una vacante', 'warning'); return; }
   const result = document.getElementById('ranking-result');
   result.innerHTML = `<div style="background:#000f22;border-radius:8px;padding:28px;text-align:center;color:white">
