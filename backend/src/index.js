@@ -2,7 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
-const cloudinary = require('cloudinary').v2;
+
 
 const vacantesRouter = require('./routes/vacantes');
 const postulantesRouter = require('./routes/postulantes');
@@ -11,12 +11,7 @@ const rankingRouter = require('./routes/ranking');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// ── Cloudinary config ───────────────────────────────────────────────────────
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET
-});
+
 
 // ── Middleware ──────────────────────────────────────────────────────────────
 app.use(cors({
