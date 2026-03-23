@@ -4,9 +4,10 @@ const PostulanteSchema = new mongoose.Schema({
   vacanteId: { type: mongoose.Schema.Types.ObjectId, ref: 'Vacante', required: true },
   nombre: { type: String, required: true, trim: true },
   respuestas: { type: Map, of: String, default: {} },
-  cvUrl: { type: String, default: null },
-  cvDriveId: { type: String, default: null },
+  cvData: { type: String, default: null },
   cvNombre: { type: String, default: null },
+  cvMimeType: { type: String, default: null },
+  cvUrl: { type: String, default: null },
   puntajeIA: { type: Number, default: null },
   evaluacionIA: { type: String, default: null }
 }, { timestamps: true });
