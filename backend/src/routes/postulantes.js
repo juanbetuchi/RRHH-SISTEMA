@@ -76,16 +76,14 @@ router.post('/', upload.single('cv'), async (req, res) => {
     // Responder inmediatamente al postulante
     res.status(201).json({ ok: true, id: postulante._id });
 
-    // Análisis automático en segundo plano (no bloquea la respuesta)
-    setImmediate(async () => {
-      try {
-        const { analizarPostulanteIncremental } = require('./ranking');
-        await analizarPostulanteIncremental(postulante, vacante);
-        console.log(`✅ Análisis automático completado: ${nombre}`);
-      } catch (e) {
-        console.error(`⚠ Error análisis automático (${nombre}):`, e.message);
-      }
-    });
+    // Análisis automático — se ejecuta después de responder
+    try {
+      const { analizarPostulanteIncremental } = require('./ranking');
+      const resultado = await analizarPostulanteIncremental(postulante, vacante);
+      console.log(`✅ Análisis automático completado: ${nombre} — Puntaje: ${resultado.puntaje}`);
+    } catch (e) {
+      console.error(`⚠ Error análisis automático (${nombre}):`, e.message);
+    }
 
   } catch (err) {
     console.error('Error:', err.message);
